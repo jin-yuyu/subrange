@@ -1,0 +1,66 @@
+
+# ========================
+# Using a single integral 
+# ------------------------
+d2A = function(n) {
+    integrand = function(x) {
+       Phi = pnorm(x)
+       return(1 - (1-Phi)^n - Phi^n)
+    }
+    tmp = integrate(integrand, lower=0, upper=Inf)
+    return(2*tmp$value)
+}
+# ========================
+# Using a double integral 
+# ------------------------
+d2B = function(n,m=1) {
+   f= function(x,y) {
+     (y^m) * exp(-(x^2+(x+y)^2)/2) * (pnorm(x+y)-pnorm(x))^(n-2)
+   }
+   tmp = integrate(function(y) {
+     sapply(y,function(y) {
+              integrate(function(x){f(x,y)},-Inf,Inf)$value})  
+   }, 0, Inf)
+   return( n*(n-1)/2/pi*tmp$value )
+}
+# ------------------------
+d3B = function(n) {
+    s2 = d2B(n,m=2) - (d2A(n))^2 
+   return( sqrt(s2) )
+}
+
+#========================================================================
+d2k = function(n,k=0,m=1) {
+  kmax = floor(n/2)-1
+  message = paste("k should be smaller than", floor(n/2))
+  if ( k > kmax ) stop(message)
+  g = function(y1,y2) {
+      lconst = lgamma(n+1)-2*lgamma(k+1)-lgamma(n-2*k-1)
+      lph1   = dnorm(y1,    log=TRUE)
+      lph12  = dnorm(y1+y2, log=TRUE)
+      klPH1   = k*pnorm(y1,  log.p=TRUE)
+      klPH12  = k*pnorm(y1+y2, lower.tail=FALSE, log.p=TRUE)
+      tmp = lconst+lph1+lph12 + klPH1 + klPH12 
+      return ( y2^m * exp(tmp) * (pnorm(y1+y2)-pnorm(y1))^(n-2*k-2) )
+  }
+  tmp = integrate(function(y2) {
+     sapply(y2,function(y2) {
+              integrate(function(y1){g(y1,y2)},-Inf,Inf)$value})  
+   }, 0, Inf)
+   return( tmp$value )
+}
+#-----------------------------------------------------------------------
+d3k = function(n,k=0) {
+  kmax = floor(n/2)-1
+  message = paste("k should be smaller than", floor(n/2))
+  if ( k > kmax ) stop(message)
+  s2 = d2k(n,k=k,m=2) - (d2k(n,k=k,m=1))^2 
+  return( sqrt(s2) )
+}
+
+#========================================================================
+c4 = function(n) {
+   sqrt(2/(n-1)) * exp( lgamma(n/2) - lgamma( (n-1)/2 ) )
+}
+# 
+
